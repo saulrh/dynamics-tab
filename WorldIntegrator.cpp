@@ -189,7 +189,7 @@ void WorldState::writeToWorld(robotics::World* w)
         // for(unsigned int i = 0; i < mPosVects[s].size(); i++)
         //     std::cout << mPosVects[s][i] << " ";
         // std::cout << std::endl;
-        w->getSkeleton(s)->setPose(mPosVects[s]);
+        w->getSkeleton(s)->setPose(mPosVects[s], true, true);
     }
     for(int r = 0; r < w->getNumRobots(); r++)
         w->getRobot(r)->update();
