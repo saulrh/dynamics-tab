@@ -22,6 +22,8 @@
 
 #include <iostream>
 
+#define SIMULATION_TIMESTEP 0.001
+
 /**
  * @class DynamicSimulationTab
  * @brief Uses DART's dynamic simulation capabilities
@@ -50,10 +52,9 @@ public:
 
     void SimulateFrame();
     void OnSlider(wxCommandEvent &evt);
-    void OnRadio(wxCommandEvent &evt);
     void OnButton(wxCommandEvent &evt);
-    void OnCheckBox(wxCommandEvent &evt);
     void OnListBox(wxCommandEvent &evt);
+    void OnTimer(wxTimerEvent &evt);
     void PopulateTimeline();
     void UpdateListBox();
     void GRIPStateChange();
@@ -67,6 +68,10 @@ private:
 
     wxListBox* mStateListBox;
     int mListBoxSelectedState;
+    
+    wxTimer* mSimTimer;
+    
+    WorldState* mCurrentSimState;
 };
 
 #endif /** DYNAMIC_SIMULATION_TAB */
