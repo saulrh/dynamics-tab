@@ -331,28 +331,28 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
 
             // std::cout << "DEBUG: set velocity component of derivative" << std::endl;
             Eigen::VectorXd velUpdate = mWorldState->mVelVects[i] + (qddot * mTimeStep);
-            std::cout << "       ";
-            for(unsigned int i = 0; i < velUpdate.size(); i++)
-                std::cout << velUpdate[i] << " ";
-            std::cout << std::endl;
-            std::cout << "       "
-                      << currentIndex
-                      << skel->getNumDofs()
-                      << velUpdate.size()
-                      << std::endl;
+            // std::cout << "       ";
+            // for(unsigned int i = 0; i < velUpdate.size(); i++)
+            //     std::cout << velUpdate[i] << " ";
+            // std::cout << std::endl;
+            // std::cout << "       "
+            //           << currentIndex
+            //           << skel->getNumDofs()
+            //           << velUpdate.size()
+            //           << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = velUpdate;
             currentIndex += skel->getNumDofs();
 
             // std::cout << "DEBUG: set acceleration component of derivative" << std::endl;
-            std::cout << "       ";
-            for(unsigned int i = 0; i < qddot.size(); i++)
-                std::cout << qddot[i] << " ";
-            std::cout << std::endl;
-            std::cout << "       "
-                      << currentIndex
-                      << skel->getNumDofs()
-                      << qddot.size()
-                      << std::endl;
+            // std::cout << "       ";
+            // for(unsigned int i = 0; i < qddot.size(); i++)
+            //     std::cout << qddot[i] << " ";
+            // std::cout << std::endl;
+            // std::cout << "       "
+            //           << currentIndex
+            //           << skel->getNumDofs()
+            //           << qddot.size()
+            //           << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
         }
