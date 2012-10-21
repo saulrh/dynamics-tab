@@ -15,36 +15,15 @@
 #include <dynamics/SkeletonDynamics.h>
 #include <integration/EulerIntegrator.h>
 
-/**
- * @function WorldIntegrator
- * @brief Constructor
- */
-WorldIntegrator::WorldIntegrator()
-{
-    mWorld = NULL;
-    mTimeStep = 0.01;
-    mWorldState = NULL;
-}
+/////////////////////////////////////////////////////////////////////////////////////////////
+//#########################################################################################//
+//# world state                                                                           #//
+//#########################################################################################//
+/////////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * @function WorldIntegrator
- * @brief Constructor with args. Sets mTimeStep and remembers w and state.
- */
-WorldIntegrator::WorldIntegrator(robotics::World* w, double timeStep)
-{
-    mWorld = w;
-    mTimeStep = timeStep;
-    mWorldState = new WorldState();
-}
 
-/**
- * @function ~WorldIntegrator
- * @brief Destructor. Doesn't delete anything! Worlds are persistent,
- * and you're probably using this with a list of vectors somewhere
- */
-WorldIntegrator::~WorldIntegrator()
-{
-}
+////////////////////////////////////////////////////////////////
+// constructors
 
 /**
  * @function WorldState
@@ -88,6 +67,9 @@ WorldState::WorldState(WorldState& other)
     mVels = Eigen::VectorXd(other.mVels);
 }
 
+
+////////////////////////////////////////////////////////////////
+// converters
 
 /**
  * @function readFromVector
@@ -162,6 +144,9 @@ void WorldState::writeToWorld(robotics::World* w)
     }
 }
 
+////////////////////////////////////////////////////////////////
+// utility functions
+
 /**
  * @function getNumberOfDoFs
  * @brief Figures out how many dofs there are in the given world
@@ -175,12 +160,67 @@ int WorldState::getNumberOfDoFs(robotics::World* w)
     return result;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+//#########################################################################################//
+//# world integrator                                                                      #//
+//#########################################################################################//
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////
+// constructors
+
+/**
+ * @function WorldIntegrator
+ * @brief Constructor
+ */
+WorldIntegrator::WorldIntegrator()
+{
+    mWorld = NULL;
+    mTimeStep = 0.01;
+    mWorldState = NULL;
+}
+
+/**
+ * @function WorldIntegrator
+ * @brief Constructor with args. Sets mTimeStep and remembers w and state.
+ */
+WorldIntegrator::WorldIntegrator(robotics::World* w, double timeStep)
+{
+    mWorld = w;
+    mTimeStep = timeStep;
+    mWorldState = new WorldState();
+}
+
+/**
+ * @function ~WorldIntegrator
+ * @brief Destructor. Doesn't delete anything! Worlds are persistent,
+ * and you're probably using this with a list of vectors somewhere
+ */
+WorldIntegrator::~WorldIntegrator()
+{
+}
+
+////////////////////////////////////////////////////////////////
+// get state
+
 Eigen::VectorXd WorldIntegrator::getState()
 {
     Eigen::VectorXd result;
     mWorldState->writeToVector(result);
     return result;
 }
+
+////////////////////////////////////////////////////////////////
+// set state
+
+
+void WorldIntegrator::setState(Eigen::VectorXd state)
+{
+    mWorldState->readFromVector(state);
+}
+
+////////////////////////////////////////////////////////////////
+// eval derivative
 
 Eigen::VectorXd WorldIntegrator::evalDeriv()
 {
@@ -212,33 +252,3 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
         }
     }
 }
-
-void WorldIntegrator::setState(Eigen::VectorXd state)
-{
-    mWorldState->readFromVector(state);
-}
-
-
-// void DynamicSimulationTab::EvaluateSimulationDerivative()
-// {
-//     // apply contact forces for this frame to each thing in the world
-//     mWorld->mCollisionChecker->applyContactForces();
-    
-//     VectorXd deriv = VectorXd::Zero(ComputeNumDofsInWorld(mWorld) * 2);
-//     int currentIndex;
-    
-//     for (unsigned int i = 0; i < mWorld->mRobots->size(); i++)
-//     {
-//         if(mWorld->mRobots->getImmobileState())
-//             continue;
-//         int numIndices = mRobots[i]->getNumQuickDofs();
-//         VectorXd qddot = mRobots[i]->getInvMassMatrix() *
-//             (-mRobots[i]->getCombinedVector()
-//              + mRobots[i]->getExternalForces()
-//              + mCollisionHandle->getConstraintForce(i));
-//     }
-//     for (unsigned int i = 0; i < mWorld.mObjects.size(); i++)
-//     {
-//     }
-    
-// }
