@@ -106,7 +106,9 @@ class WorldIntegrator : public integration::IntegrableSystem
 {
 public:
     WorldIntegrator();
-    WorldIntegrator(robotics::World* w = NULL, double timeStep = 0.0);
+    WorldIntegrator(double timeStep,
+                    robotics::World* w,
+                    Eigen::Vector3d gravityVector = Eigen::Vector3d(0.0, 0.0, -9.8));
     ~WorldIntegrator();
     
     virtual Eigen::VectorXd getState();
@@ -116,6 +118,7 @@ public:
     robotics::World* mWorld;
     WorldState* mWorldState;
     double mTimeStep;
+    Eigen::Vector3d mGravity;
 };
 
 

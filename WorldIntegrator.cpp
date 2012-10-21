@@ -237,11 +237,12 @@ WorldIntegrator::WorldIntegrator()
  * @function WorldIntegrator
  * @brief Constructor with args. Sets mTimeStep and remembers w and state.
  */
-WorldIntegrator::WorldIntegrator(robotics::World* w, double timeStep)
+WorldIntegrator::WorldIntegrator(double timeStep, robotics::World* w, Eigen::Vector3d gravityVector)
 {
     mWorld = w;
     mTimeStep = timeStep;
     mWorldState = new WorldState();
+    mGravity = gravityVector;
 }
 
 /**
@@ -277,20 +278,17 @@ void WorldIntegrator::setState(Eigen::VectorXd state)
 
 Eigen::VectorXd WorldIntegrator::evalDeriv()
 {
-    std::cout << "DEBUG: updating model" << std::endl;
-
     // update the model
     mWorldState->writeToWorld(mWorld);
-    
-    std::cout << "DEBUG: calculate contact forces" << std::endl;
+    // std::cout << "DEBUG: calculate contact forces" << std::endl;
 
     // calulate contact forces
     mWorld->mCollisionHandle->applyContactForces();
 
     Eigen::VectorXd deriv = Eigen::VectorXd::Zero(WorldState::getNumberOfDoFs(mWorld) * 2);
-    int currentIndex;
+    int currentIndex = 0;
 
-    std::cout << "DEBUG: start processing skeletons" << std::endl;
+    // std::cout << "DEBUG: start processing skeletons" << std::endl;
 
     // for each skeleton, calculate how that skeleton is going to try to behave
     for(int i = 0; i < mWorld->getNumSkeletons(); i++)
@@ -299,43 +297,70 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
         
         if(skel->getImmobileState())
         {
+            // std::cout << "DEBUG: immobile object" << std::endl;
             currentIndex += skel->getNumDofs() * 2;
         }
         else
         {
-            std::cout << "DEBUG: compute qddot" << std::endl;
+            // std::cout << "DEBUG: compute dynamics" << std::endl;
+            skel->computeDynamics(mGravity, mWorldState->mVelVects[i], true);
+            
+            // std::cout << "DEBUG: compute qddot" << std::endl;
             Eigen::MatrixXd invMassMatrix = skel->getInvMassMatrix();
-            std::cout << "DEBUG: inverse mass matrix has "
-                      << invMassMatrix.rows()
-                      << " rows and "
-                      << invMassMatrix.cols()
-                      << " cols"
-                      << std::endl;
+            // std::cout << "DEBUG: inv mass matrix has "
+            //           << invMassMatrix.rows()
+            //           << " rows and "
+            //           << invMassMatrix.cols()
+            //           << " cols"
+            //           << std::endl;
             Eigen::MatrixXd forces = (-skel->getCombinedVector()
                                     + skel->getExternalForces()
                                     + mWorld->mCollisionHandle->getConstraintForce(i));
-            std::cout << "DEBUG: forces matrix  has "
-                      << forces.rows()
-                      << " rows and "
-                      << forces.cols()
-                      << " cols"
-                      << std::endl;
+            // std::cout << "DEBUG: forces matrix  has "
+            //           << forces.rows()
+            //           << " rows and "
+            //           << forces.cols()
+            //           << " cols"
+            //           << std::endl;
+
+            // std::cout << "DEBUG: compute qddot" << std::endl;
             Eigen::VectorXd qddot = invMassMatrix * forces;
 
-            std::cout << "DEBUG: clamp rotations to [-pi, pi]" << std::endl;
+            // std::cout << "DEBUG: clamp rotations to [-pi, pi]" << std::endl;
             skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
-            std::cout << "DEBUG: set velocity component of derivative" << std::endl;
-            deriv.segment(currentIndex, skel->getNumDofs()) = mWorldState->mVelVects[i] + (qddot * mTimeStep);
+
+            // std::cout << "DEBUG: set velocity component of derivative" << std::endl;
+            Eigen::VectorXd velUpdate = mWorldState->mVelVects[i] + (qddot * mTimeStep);
+            std::cout << "       ";
+            for(unsigned int i = 0; i < velUpdate.size(); i++)
+                std::cout << velUpdate[i] << " ";
+            std::cout << std::endl;
+            std::cout << "       "
+                      << currentIndex
+                      << skel->getNumDofs()
+                      << velUpdate.size()
+                      << std::endl;
+            deriv.segment(currentIndex, skel->getNumDofs()) = velUpdate;
             currentIndex += skel->getNumDofs();
-            std::cout << "DEBUG: set acceleration component of derivative" << std::endl;
+
+            // std::cout << "DEBUG: set acceleration component of derivative" << std::endl;
+            std::cout << "       ";
+            for(unsigned int i = 0; i < qddot.size(); i++)
+                std::cout << qddot[i] << " ";
+            std::cout << std::endl;
+            std::cout << "       "
+                      << currentIndex
+                      << skel->getNumDofs()
+                      << qddot.size()
+                      << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
         }
     }
     
-    std::cout << "DEBUG: done processing skeletons" << std::endl;
+    // std::cout << "DEBUG: done processing skeletons" << std::endl;
 
-    std::cout << "DEBUG: update state's time" << std::endl;
+    // std::cout << "DEBUG: update state's time" << std::endl;
 
     // update the time counter
     mWorldState->mT += mTimeStep;
