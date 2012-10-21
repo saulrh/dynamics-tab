@@ -200,6 +200,11 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
             break;
         }
         std::cout << "(I) Simulating one frame." << std::endl;
+        WorldIntegrator wi = WorldIntegrator(mWorld, .05);
+        WorldState* simState = new WorldState(mWorld);
+        wi.mWorldState = simState;
+        mIntegrator.integrate(&wi, wi.mTimeStep);
+        simState->writeToWorld(mWorld);
         std::cout << "(I) Simulated one frame." << std::endl;
         break;
     }
