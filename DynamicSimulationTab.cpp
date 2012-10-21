@@ -38,6 +38,7 @@ enum DynamicSimulationTabEvents {
     button_LoadState,
     button_LoadWorkingState,
     button_DeleteState,
+    button_WriteHistory,
     listbox_SavedStates
 };
 
@@ -89,12 +90,11 @@ GRIPTab(parent, id, pos, size, style)
     wxBoxSizer* simulationControlSizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* stateSizer = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer* stateControlSizer = new wxBoxSizer(wxVERTICAL);
+
+    mStateListBox = new wxListBox(this, listbox_SavedStates);
+    mListBoxSelectedState = -1;
     
-    simulationControlSizer->Add(new wxButton(this, button_RunSim, wxT("Start Simulation")),
-                                0,     // do not resize to fit proportions vertically
-                                wxALL, // border all around
-                                1);    // border width is 1 so buttons are close together
-    simulationControlSizer->Add(new wxButton(this, button_StopSim, wxT("Stop Simulation")),
+    simulationControlSizer->Add(new wxButton(this, button_RunSim, wxT("Toggle Simulation")),
                                 0,     // do not resize to fit proportions vertically
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
@@ -103,6 +103,10 @@ GRIPTab(parent, id, pos, size, style)
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
     simulationControlSizer->Add(new wxButton(this, button_ClearHistory, wxT("Clear History")),
+                                0,     // do not resize to fit proportions vertically
+                                wxALL, // border all around
+                                1);    // border width is 1 so buttons are close together
+    simulationControlSizer->Add(new wxButton(this, button_WriteHistory, wxT("Save History")),
                                 0,     // do not resize to fit proportions vertically
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
@@ -128,17 +132,17 @@ GRIPTab(parent, id, pos, size, style)
                     1,                          // take up 1/4 of stateSizer
                     wxEXPAND | wxALIGN_CENTER,  // expand and center
                     0);                         // no border
-    stateSizer->Add(new wxListBox(this, listbox_SavedStates),
+    stateSizer->Add(mStateListBox,
                     3,                                   // take up 3/4 of stateSizer
                     wxEXPAND | wxALIGN_CENTER | wxALL,   // borders all over, expand to fit
                     1);                                  // 1-pixel border
     
     tabBoxSizer->Add(simulationControlSizer,
-                     1,         // take up 1/8 of the tab
+                     1,         // take up 1/6 of the tab
                      wxEXPAND | wxALIGN_CENTER | wxALL,
                      1);
     tabBoxSizer->Add(stateSizer,
-                     7,         // take up 7/8 of the tab
+                     5,         // take up 5/6 of the tab
                      wxEXPAND | wxALIGN_CENTER | wxALL,
                      1);
 
@@ -180,25 +184,69 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
   
     switch (button_num)
     {
-    case button_RunSim:         /** Start Simulating */
+    case button_RunSim:         /** Start or stop Simulating */
+        {
         if ( mWorld == NULL ) {
             std::cout << "(!) Must have a world loaded to simulate (!)" << std::endl;
             break;
         }
         std::cout << "(I) Simulating." << std::endl;
-    case button_StopSim:        /** Stop Simulating */
-        if ( mWorld == NULL ) {
-            std::cout << "(!) Must have a world loaded to simulate (!)" << std::endl;
-            break;
-        }
-        std::cout << "(I) Stopping simulation." << std::endl;
         break;
+    }
     case button_RunFrame:         /** Simulate one step */
+    {
         if ( mWorld == NULL ) {
             std::cout << "(!) Must have a world loaded to simulate (!)" << std::endl;
             break;
         }
-        std::cout << "(I) Single-stepping." << std::endl;
+        std::cout << "(I) Simulating one frame." << std::endl;
+        std::cout << "(I) Simulated one frame." << std::endl;
+        break;
+    }
+    case button_SaveState:         /** save the current state as a WorldState */
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to work with states (!)" << std::endl;
+            break;
+        }
+        WorldState* nState = new WorldState(mWorld);
+        std::cout << "(I) Saving state" << std::endl;
+        mSavedStates.push_back(nState);
+        UpdateListBox();
+        std::cout << "(I) Saved state" << std::endl;
+        break;
+    }
+    case button_LoadState:
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to work with states (!)" << std::endl;
+            break;
+        }
+        if ( mListBoxSelectedState == -1 ) {
+            std::cout << "(!) Must have a state selected to load a state (!)" << std::endl;
+            break;
+        }
+        std::cout << "(I) Loading state" << std::endl;
+        mSavedStates[mListBoxSelectedState]->writeToWorld(mWorld);
+        viewer->UpdateCamera();
+        std::cout << "(I) Loaded state" << std::endl;
+        break;
+    }
+    case button_DeleteState:
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to work with states (!)" << std::endl;
+            break;
+        }
+        if ( mListBoxSelectedState == -1 ) {
+            std::cout << "(!) Must have a state selected to delete a state (!)" << std::endl;
+            break;
+        }
+        std::cout << "(I) Deleting state" << std::endl;
+        mSavedStates.erase(mSavedStates.begin() + mListBoxSelectedState);
+        UpdateListBox();
+        std::cout << "(I) Deleted state" << std::endl;
+    }
     }
 }
 
@@ -222,14 +270,43 @@ void DynamicSimulationTab::OnCheckBox( wxCommandEvent &evt ) {
 }
 
 ////////////////////////////////////////////////////////////////
-// listbox item selected
+// listbox
 ////////////////////////////////////////////////////////////////
+
+
+/**
+ * @function UpdateListBox
+ * @brief Updates the listbox to reflect the mSavedState list
+ */
+void DynamicSimulationTab::UpdateListBox()
+{
+    wxString listboxItems[mSavedStates.size()];
+    void* listboxObjects[mSavedStates.size()];
+    
+    for(unsigned int i = 0; i < mSavedStates.size(); i++)
+    {
+        wxString idx;
+        wxString time;
+        idx << i;
+        time << mSavedStates[i]->mT;
+        listboxItems[i] = idx + wxT(": T=") + time;
+    }
+    mStateListBox->Set(mSavedStates.size(), listboxItems);
+}
+
 
 /**
  * @function OnListBox
  * @brief Handle selection of listbox items
  */
 void DynamicSimulationTab::OnListBox(wxCommandEvent &evt) {
+    int listbox_num = evt.GetId();
+    int item = evt.GetSelection();
+    switch(listbox_num) {
+    case listbox_SavedStates:
+        mListBoxSelectedState = item;
+        break;
+    }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -295,7 +372,7 @@ void DynamicSimulationTab::PopulateTimeline()
     cout << "-->(+) Populating Timeline - Increment: " << simulation_dt << " Total time: " << t << " Steps: " << numsteps << endl;
 
     frame->InitTimer(string("Simulation_History"), simulation_dt);
-    for( std::vector<Eigen::VectorXd>::iterator it = mSimHistory.begin(); it != mSimHistory.end(); it++)
+    for( std::vector<WorldState*>::iterator it = mSimHistory.begin(); it != mSimHistory.end(); it++)
     {
         // set each robot and object to the position recorded for that frame
         // mWorld->getRobot(mRobotId)->setQuickDofs( *it );

@@ -42,7 +42,7 @@
 
 // how this all works, theoretically:
 
-// create a WorldIntegrator and it at your world.
+// create a WorldIntegrator and point it at your world.
 // use readFromWorld to get a WorldState. Maybe several
 //     worldstates. organize them how you like.
 // point the WorldIntegrator at the world state
@@ -77,7 +77,7 @@ class WorldState
 public:
     WorldState();
     WorldState(robotics::World* w);
-    WorldState(Eigen::VectorXd& serState);
+    WorldState(robotics::World* w, Eigen::VectorXd& serState);
     WorldState(WorldState& other);
 
     ~WorldState();
@@ -85,10 +85,11 @@ public:
     void writeToWorld(robotics::World* w);
     void readFromWorld(robotics::World* w);
     void writeToVector(Eigen::VectorXd& serState);
-    void readFromVector(Eigen::VectorXd& serState);
+    void readFromVector(robotics::World* w, Eigen::VectorXd& serState);
 
-    Eigen::VectorXd mPoss;
-    Eigen::VectorXd mVels;
+    std::vector<Eigen::VectorXd> mPosVects;
+    std::vector<Eigen::VectorXd> mVelVects;
+    double mT;
     
     static int getNumberOfDoFs(robotics::World* w);
 };

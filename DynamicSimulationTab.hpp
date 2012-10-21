@@ -18,6 +18,8 @@
 #include <robotics/World.h>
 #include <integration/EulerIntegrator.h>
 
+#include "WorldIntegrator.hpp"
+
 #include <iostream>
 
 /**
@@ -27,8 +29,8 @@
 class DynamicSimulationTab : public GRIPTab
 {
 public:
-    std::vector< Eigen::VectorXd > mSimHistory;
-    std::vector< int > mSavedStates;
+    std::vector< WorldState* > mSimHistory;
+    std::vector< WorldState* > mSavedStates;
 
     // sizer for whole tab
     wxBoxSizer* sizerFull;
@@ -53,6 +55,7 @@ public:
     void OnCheckBox(wxCommandEvent &evt);
     void OnListBox(wxCommandEvent &evt);
     void PopulateTimeline();
+    void UpdateListBox();
     void GRIPStateChange();
 
     // wx events
@@ -60,7 +63,10 @@ public:
     DECLARE_EVENT_TABLE()
     
 private:
-    integration::Integrator* mIntegrator;
+    integration::EulerIntegrator mIntegrator;
+
+    wxListBox* mStateListBox;
+    int mListBoxSelectedState;
 };
 
 #endif /** DYNAMIC_SIMULATION_TAB */

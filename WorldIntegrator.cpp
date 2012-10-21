@@ -14,6 +14,10 @@
 #include <iostream>
 #include <dynamics/SkeletonDynamics.h>
 #include <integration/EulerIntegrator.h>
+#include <GUI/Viewer.h>
+#include <GUI/GUI.h>
+#include <Tabs/AllTabs.h>
+#include <GRIPApp.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //#########################################################################################//
@@ -31,8 +35,8 @@
  */
 WorldState::WorldState()
 {
-    mPoss.resize(0);
-    mVels.resize(0);
+    mPosVects.resize(0);
+    mVelVects.resize(0);
 }
 
 /**
@@ -42,8 +46,7 @@ WorldState::WorldState()
  */
 WorldState::WorldState(robotics::World* w)
 {
-    mPoss.resize(getNumberOfDoFs(w));
-    mVels.resize(getNumberOfDoFs(w));
+    readFromWorld(w);
 }
 
 /**
@@ -52,9 +55,9 @@ WorldState::WorldState(robotics::World* w)
  * serialized/compacted/whatever into a VectorXd for simulation
  * purposes.
  */
-WorldState::WorldState(Eigen::VectorXd& serState)
+WorldState::WorldState(robotics::World* w, Eigen::VectorXd& serState)
 {
-    readFromVector(serState);
+    readFromVector(w, serState);
 }
 
 /**
@@ -63,27 +66,40 @@ WorldState::WorldState(Eigen::VectorXd& serState)
  */
 WorldState::WorldState(WorldState& other)
 {
-    mPoss = Eigen::VectorXd(other.mPoss);
-    mVels = Eigen::VectorXd(other.mVels);
+    mPosVects.resize(other.mPosVects.size());
+    mVelVects.resize(other.mVelVects.size());
 }
 
+/**
+ * @function ~WorldState
+ * @brief destructor
+ */
+WorldState::~WorldState()
+{
+}
 
 ////////////////////////////////////////////////////////////////
 // converters
 
 /**
  * @function readFromVector
+
  * @brief takes a serialized/compacted/whatever state in VectorXd and
- * unpacks and copies it into this worldstate
+ * unpacks and copies it into this worldstate. Uses the given world to
+ * figure out how long everything should be.
  */
-void WorldState::readFromVector(Eigen::VectorXd& serState)
+void WorldState::readFromVector(robotics::World* w, Eigen::VectorXd& serState)
 {
-    mPoss.resize(serState.size() / 2);
-    mVels.resize(serState.size() / 2);
-    for(int i = 0; i < mPoss.size(); i++)
+    int currentIndex = 0;
+    mPosVects.resize(w->getNumSkeletons());
+    mVelVects.resize(w->getNumSkeletons());
+    for(int s = 0; s < w->getNumSkeletons(); s++)
     {
-        mPoss[i] = serState[2*i    ];
-        mVels[i] = serState[2*i + 1];
+        for (int d = 0; d < w->getSkeleton(s)->getNumDofs(); d++)
+        {
+            mPosVects[s][d] = serState[currentIndex++];
+            mVelVects[s][d] = serState[currentIndex++];
+        }
     }
 }
 
@@ -94,12 +110,27 @@ void WorldState::readFromVector(Eigen::VectorXd& serState)
  */
 void WorldState::writeToVector(Eigen::VectorXd& serState)
 {
-    serState.resize(mPoss.size() + mVels.size());
-    for(int i = 0; i < mPoss.size(); i++)
-    {
-        serState[2*i    ] = mPoss[i];
-        serState[2*i + 1] = mVels[i];
-    }
+    int currentIndex;
+
+    int nDofs = 0;
+    for(unsigned int i = 0; i < mPosVects.size(); i++) nDofs += mPosVects[i].size();
+    for(unsigned int i = 0; i < mVelVects.size(); i++) nDofs += mVelVects[i].size();
+    serState.resize(nDofs);
+
+    currentIndex = 0;
+    for(unsigned int i = 0; i < mPosVects.size(); i++)
+        for(unsigned int j = 0; j < mPosVects[i].size(); j++)
+        {
+            serState[currentIndex] = mPosVects[i][j];
+            currentIndex += 2;
+        }
+    currentIndex = 1;
+    for(unsigned int i = 0; i < mVelVects.size(); i++)
+        for(unsigned int j = 0; j < mVelVects[i].size(); j++)
+        {
+            serState[currentIndex] = mVelVects[i][j];
+            currentIndex += 2;
+        }
 }
 
 /**
@@ -109,19 +140,12 @@ void WorldState::writeToVector(Eigen::VectorXd& serState)
  */
 void WorldState::readFromWorld(robotics::World* w)
 {
-    int nDofs = WorldState::getNumberOfDoFs(w);
-    mPoss.resize(nDofs);
-    mVels.resize(nDofs);
-    int currentIndex;
+    mPosVects.resize(w->getNumSkeletons());
+    mVelVects.resize(w->getNumSkeletons());
+
     for(int s = 0; s < w->getNumSkeletons(); s++ ) {
-        Eigen::VectorXd skelDofs;
-        w->getSkeleton(s)->getPose(skelDofs);
-        
-        for(int dof = 0; dof < skelDofs.size(); dof++) {
-            mPoss[currentIndex] = skelDofs[dof];
-            mVels[currentIndex] = 0.0;
-            currentIndex++;
-        }
+        w->getSkeleton(s)->getPose(mPosVects[s]);
+        mVelVects[s] = Eigen::VectorXd::Zero(mPosVects[s].size());
     }
 }
 
@@ -132,16 +156,18 @@ void WorldState::readFromWorld(robotics::World* w)
  */
 void WorldState::writeToWorld(robotics::World* w)
 {
-    int curStateIndex = 0;
-    for(int s = 0; s < w->getNumSkeletons(); s++ ) {
-        Eigen::VectorXd skelState;
-        kinematics::Skeleton* skel = w->getSkeleton(s);
-        int nDofs = skel->getNumDofs();
-        skelState.resize(nDofs);
-        for(int dof = 0; dof < nDofs; dof++)
-            skelState[dof] = mPoss[curStateIndex++];
-        skel->setPose(skelState);
+    for(int s = 0; s < w->getNumSkeletons(); s++) {
+        // std::cout << "DEBUG: setting pose of skel " << s << " to" << std::endl;
+        // std::cout << "       ";
+        // for(unsigned int i = 0; i < mPosVects[s].size(); i++)
+        //     std::cout << mPosVects[s][i] << " ";
+        // std::cout << std::endl;
+        w->getSkeleton(s)->setPose(mPosVects[s]);
     }
+    for(int r = 0; r < w->getNumRobots(); r++)
+        w->getRobot(r)->update();
+    for(int o = 0; o < w->getNumObjects(); o++)
+        w->getObject(o)->update();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -216,7 +242,7 @@ Eigen::VectorXd WorldIntegrator::getState()
 
 void WorldIntegrator::setState(Eigen::VectorXd state)
 {
-    mWorldState->readFromVector(state);
+    mWorldState->readFromVector(mWorld, state);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -239,7 +265,7 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
         dynamics::SkeletonDynamics* skel = mWorld->getSkeleton(i);
         if(skel->getImmobileState())
         {
-            currentIndex += skel->getNumDofs();
+            currentIndex += skel->getNumDofs() * 2;
         }
         else
         {
@@ -248,7 +274,17 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
                 (skel->getExternalForces()
                  + mWorld->mCollisionHandle->getConstraintForce(i)
                  - skel->getCombinedVector());
-            // skel->clampRotation(
+            skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
+            deriv.segment(currentIndex, skel->getNumDofs()) = mWorldState->mVelVects[i] + (qddot * mTimeStep);
+            currentIndex += skel->getNumDofs();
+            deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
+            currentIndex += skel->getNumDofs();
         }
     }
+    
+    // update the time counter
+    mWorldState->mT += mTimeStep;
+
+    // and finally return the result
+    return deriv;
 }
