@@ -37,6 +37,7 @@ WorldState::WorldState()
 {
     mPosVects.resize(0);
     mVelVects.resize(0);
+    mT = 0;
 }
 
 /**
@@ -47,6 +48,8 @@ WorldState::WorldState()
 WorldState::WorldState(robotics::World* w)
 {
     readFromWorld(w);
+    mT = 0;
+    mId = getUID();
 }
 
 /**
@@ -58,6 +61,8 @@ WorldState::WorldState(robotics::World* w)
 WorldState::WorldState(robotics::World* w, Eigen::VectorXd& serState)
 {
     readFromVector(w, serState);
+    mT = 0;
+    mId = getUID();
 }
 
 /**
@@ -68,6 +73,28 @@ WorldState::WorldState(WorldState& other)
 {
     mPosVects.resize(other.mPosVects.size());
     mVelVects.resize(other.mVelVects.size());
+    for(unsigned int i = 0; i < mPosVects.size(); i++)
+        mPosVects[i] = Eigen::VectorXd(other.mPosVects[i]);
+    for(unsigned int i = 0; i < mVelVects.size(); i++)
+        mVelVects[i] = Eigen::VectorXd(other.mVelVects[i]);
+    mT = other.mT;
+    mId = getUID();
+}
+
+/**
+ * @function WorldState
+ * @brief copy constructor
+ */
+WorldState::WorldState(WorldState* other)
+{
+    mPosVects.resize(other->mPosVects.size());
+    mVelVects.resize(other->mVelVects.size());
+    for(unsigned int i = 0; i < mPosVects.size(); i++)
+        mPosVects[i] = Eigen::VectorXd(other->mPosVects[i]);
+    for(unsigned int i = 0; i < mVelVects.size(); i++)
+        mVelVects[i] = Eigen::VectorXd(other->mVelVects[i]);
+    mT = other->mT;
+    mId = getUID();
 }
 
 /**

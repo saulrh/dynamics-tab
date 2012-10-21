@@ -79,6 +79,7 @@ public:
     WorldState(robotics::World* w);
     WorldState(robotics::World* w, Eigen::VectorXd& serState);
     WorldState(WorldState& other);
+    WorldState(WorldState* other);
 
     ~WorldState();
 
@@ -90,7 +91,9 @@ public:
     std::vector<Eigen::VectorXd> mPosVects;
     std::vector<Eigen::VectorXd> mVelVects;
     double mT;
-    
+    int mId;
+
+    static int getUID() { static int sUID = 0; return sUID++; }
     static int getNumberOfDoFs(robotics::World* w);
 };
 
