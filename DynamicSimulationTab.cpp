@@ -536,7 +536,7 @@ void DynamicSimulationTab::SimulateFrame()
 
     wi.mWorldState = mCurrentSimState;
     mEuIntegrator.integrate(&wi, mWorld->mTimeStep);
-    wi.mWorldState->writeToWorld(mWorld);
+    wi.mWorldState->writeToWorld(mWorld, true);
     viewer->UpdateCamera();
 
     mSimHistory.push_back(wi.mWorldState);
@@ -566,7 +566,7 @@ void DynamicSimulationTab::PopulateTimeline()
     for( std::vector<WorldState*>::iterator it = mSimHistory.begin(); it != mSimHistory.end(); it++)
     {
         // set each robot and object to the position recorded for that frame
-        (*it)->writeToWorld(mWorld);
+        (*it)->writeToWorld(mWorld, false);
         
         
         

@@ -83,7 +83,7 @@ public:
 
     ~WorldState();
 
-    void writeToWorld(robotics::World* w);
+    void writeToWorld(robotics::World* w, bool updateDynamics=false);
     void readFromWorld(robotics::World* w);
     void writeToVector(Eigen::VectorXd& serState);
     void readFromVector(robotics::World* w, Eigen::VectorXd& serState);

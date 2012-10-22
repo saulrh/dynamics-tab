@@ -197,7 +197,7 @@ void WorldState::readFromWorld(robotics::World* w)
  * @brief Copies this state into the given world. Note that velocities
  * are ignored in this function - the world can't handle them.
  */
-void WorldState::writeToWorld(robotics::World* w)
+void WorldState::writeToWorld(robotics::World* w, bool updateDynamics)
 {
     // std::cout << "state to world" << std::endl;
     // printToStdout();
@@ -215,10 +215,13 @@ void WorldState::writeToWorld(robotics::World* w)
     for(int o = 0; o < w->getNumObjects(); o++)
         w->getObject(o)->update();
 
-    for(int s = 0; s < w->getNumSkeletons(); s++)
-        w->getSkeleton(s)->computeDynamics(w->mGravity, mVelVects[s], true);
+    if(updateDynamics)
+    {
+        for(int s = 0; s < w->getNumSkeletons(); s++)
+            w->getSkeleton(s)->computeDynamics(w->mGravity, mVelVects[s], true);
 
-    w->mCollisionHandle->applyContactForces();
+        w->mCollisionHandle->applyContactForces();
+    }
 }
 
 ////////////////////////////////////////////////////////////////
