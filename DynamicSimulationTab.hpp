@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#define SIMULATION_TIMESTEP 0.001
+#define SIMULATION_TIMESTEP 0.005
 
 /**
  * @class DynamicSimulationTab
@@ -50,7 +50,7 @@ public:
                           long style = wxTAB_TRAVERSAL);
     virtual ~DynamicSimulationTab(){}
 
-    void SimulateFrame();
+    void SimulateFrame(double dt=SIMULATION_TIMESTEP);
     void OnSlider(wxCommandEvent &evt);
     void OnButton(wxCommandEvent &evt);
     void OnListBox(wxCommandEvent &evt);

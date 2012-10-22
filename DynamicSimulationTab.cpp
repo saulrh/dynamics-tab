@@ -351,8 +351,7 @@ void DynamicSimulationTab::OnSlider(wxCommandEvent &evt) {
  * @brief Handle timer ticks
  */
 void DynamicSimulationTab::OnTimer(wxTimerEvent &evt) {
-    
-    SimulateFrame();
+    SimulateFrame(SIMULATION_TIMESTEP);
 }
 
 
@@ -399,11 +398,11 @@ void DynamicSimulationTab::OnCheckBox( wxCommandEvent &evt ) {
 // simulate one tick forward
 ////////////////////////////////////////////////////////////////
 
-void DynamicSimulationTab::SimulateFrame()
+void DynamicSimulationTab::SimulateFrame(double dt)
 {
     if (mCurrentSimState == NULL)
         mCurrentSimState = new WorldState(mWorld);
-    WorldIntegrator wi = WorldIntegrator(SIMULATION_TIMESTEP, mWorld, Eigen::Vector3d(0.0, 0.0, -9.8));
+    WorldIntegrator wi = WorldIntegrator(dt, mWorld, Eigen::Vector3d(0.0, 0.0, -9.8));
     mCurrentSimState = new WorldState(mCurrentSimState);
     wi.mWorldState = mCurrentSimState;
     mIntegrator.integrate(&wi, wi.mTimeStep);
