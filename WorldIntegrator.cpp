@@ -359,70 +359,30 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
     {
         dynamics::SkeletonDynamics* skel = mWorld->getSkeleton(i);
         
-        // std::cout << "DEBUG: compute dynamics" << std::endl;
-        skel->computeDynamics(mGravity, mWorldState->mVelVects[i], true);
-            
-        // std::cout << "DEBUG: compute qddot" << std::endl;
-        Eigen::MatrixXd invMassMatrix = skel->getInvMassMatrix();
-        // std::cout << "DEBUG: inv mass matrix has "
-        //           << invMassMatrix.rows()
-        //           << " rows and "
-        //           << invMassMatrix.cols()
-        //           << " cols"
-        //           << std::endl;
+        Eigen::MatrixXd massMatrix = skel->getMassMatrix();
         Eigen::VectorXd collisionForces = mWorld->mCollisionHandle->getConstraintForce(i);
         Eigen::VectorXd externalForces = skel->getExternalForces();
         Eigen::VectorXd combinedVector = -skel->getCombinedVector();
         Eigen::VectorXd forces = (combinedVector
                                   + externalForces
                                   + collisionForces);
-        // std::cout << "DEBUG: forces matrix  has "
-        //           << forces.rows()
-        //           << " rows and "
-        //           << forces.cols()
-        //           << " cols"
-        //           << std::endl;
 
-        // std::cout << "DEBUG: compute qddot" << std::endl;
-        Eigen::VectorXd qddot = invMassMatrix * forces;
+        Eigen::VectorXd qddot = massMatrix.fullPivHouseholderQr().solve(forces);
 
-        // std::cout << "DEBUG: clamp rotations to [-pi, pi]" << std::endl;
         skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
 
-        // std::cout << "DEBUG: set velocity component of derivative" << std::endl;
-        Eigen::VectorXd velUpdate = (qddot * mTimeStep);
+        Eigen::VectorXd velUpdate = (qddot * mWorld->mTimeStep);
         Eigen::VectorXd newvel = mWorldState->mVelVects[i] + velUpdate;
 
         if(!skel->getImmobileState())
         {
-            // std::cout << "       ";
-            // for(unsigned int i = 0; i < velUpdate.size(); i++)
-            //     std::cout << velUpdate[i] << " ";
-            // std::cout << std::endl;
-            // std::cout << "       "
-            //           << currentIndex
-            //           << skel->getNumDofs()
-            //           << velUpdate.size()
-            //           << std::endl;
-            deriv.segment(currentIndex, skel->getNumDofs()) = velUpdate;
+            deriv.segment(currentIndex, skel->getNumDofs()) = newvel;
             currentIndex += skel->getNumDofs();
-
-            // std::cout << "DEBUG: set acceleration component of derivative" << std::endl;
-            // std::cout << "       ";
-            // for(unsigned int i = 0; i < qddot.size(); i++)
-            //     std::cout << qddot[i] << " ";
-            // std::cout << std::endl;
-            // std::cout << "       "
-            //           << currentIndex
-            //           << skel->getNumDofs()
-            //           << qddot.size()
-            //           << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
         }
         else
         {
-            // std::cout << "DEBUG: immobile object" << std::endl;
             currentIndex += skel->getNumDofs() * 2;
         }
 
