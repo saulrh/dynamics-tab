@@ -195,24 +195,30 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
             std::cout << "(!) Must have a world loaded to simulate (!)" << std::endl;
             break;
         }
-        if (mSimTimer->IsRunning())
-        {
-            std::cout << "(I) Stopping simulation." << std::endl;
-            mSimTimer->Stop();
-        }
-        else
-        {
-            std::cout << "(I) Starting simulation." << std::endl;
-            // save the start
-            if (mCurrentSimState == NULL)
-                mCurrentSimState = new WorldState(mWorld);
-            mSavedStates.push_back(mCurrentSimState);
-            UpdateListBox();
-            // start timer, milliseconds
-            bool result = mSimTimer->Start(mWorld->mTimeStep * 5000, false);
-            if (!result)
-                std::cout << "(!) Could not start timer." << std::endl;
-        }
+        std::cout << "(I) Simulating ten frames." << std::endl;
+        for(int i = 0; i < 10; i++)
+            SimulateFrame();
+        std::cout << "(I) Simulated ten frames." << std::endl;
+        
+        // if (mSimTimer->IsRunning())
+        // {
+        //     std::cout << "(I) Stopping simulation." << std::endl;
+        //     mSimTimer->Stop();
+        // }
+        // else
+        // {
+        //     std::cout << "(I) Starting simulation." << std::endl;
+        //     // save the start
+        //     if (mCurrentSimState == NULL)
+        //         mCurrentSimState = new WorldState(mWorld);
+        //     mSavedStates.push_back(mCurrentSimState);
+        //     UpdateListBox();
+        //     // start timer, milliseconds
+        //     mTimerSetAt = clock();
+        //     bool result = mSimTimer->Start(mWorld->mTimeStep * 5000, true);
+        //     if (!result)
+        //         std::cout << "(!) Could not start timer." << std::endl;
+        // }
         break;
     }
     case id_button_RunFrame:         /** Simulate one step */
@@ -398,6 +404,22 @@ void DynamicSimulationTab::OnSlider(wxCommandEvent &evt) {
  */
 void DynamicSimulationTab::OnTimer(wxTimerEvent &evt) {
     SimulateFrame();
+
+    bool cont = true;
+    for(int i = 0; i < mCurrentSimState->mPosVects.size(); i++)
+        if(std::isnan(mCurrentSimState->mPosVects[i][0]))
+            cont = false;
+    if (cont)
+    {
+        int timerFiredAt = clock();
+        double timeTaken = ((double)(mTimerSetAt - timerFiredAt)) / CLOCKS_PER_SEC;
+        int msToWait = timeTaken / 10000;
+        std::cout << "waiting " << msToWait << " ms for next tick" << std::endl;
+        mTimerSetAt = clock();
+        mSimTimer->Start(msToWait, true);
+    }
+    else
+        mSimTimer->Stop();
 }
 
 
@@ -470,9 +492,6 @@ void DynamicSimulationTab::SimulateFrame()
               << mCurrentSimState->mT
               << (mWorld->checkCollision() ? " Colliding" : "")
               << std::endl;
-    for(int i = 0; i < mCurrentSimState->mPosVects.size(); i++)
-        if(std::isnan(mCurrentSimState->mPosVects[i][0]))
-            mSimTimer->Stop();
 }
 
 ////////////////////////////////////////////////////////////////
