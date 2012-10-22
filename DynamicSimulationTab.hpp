@@ -17,6 +17,7 @@
 #include <dynamics/BodyNodeDynamics.h>
 #include <robotics/World.h>
 #include <integration/EulerIntegrator.h>
+#include <integration/RK4Integrator.h>
 
 #include "WorldIntegrator.hpp"
 
@@ -65,7 +66,8 @@ public:
     DECLARE_EVENT_TABLE()
     
 private:
-    integration::EulerIntegrator mIntegrator;
+    integration::EulerIntegrator mEuIntegrator;
+    integration::RK4Integrator mRK4Integrator;
 
     wxListBox* mStateListBox;
     int mListBoxSelectedState;
