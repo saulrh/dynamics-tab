@@ -12,14 +12,16 @@
 #include <GUI/GRIPSlider.h>
 #include <GUI/GRIPFrame.h>
 #include <Tabs/GRIPTab.h>
+#include <Tabs/AllTabs.h>
+#include <GRIPApp.h>
 
 #include <iostream>
 #include <iomanip>
+#include <cstdio>
 
 #include <robotics/World.h>
-
-#include <Tabs/AllTabs.h>
-#include <GRIPApp.h>
+#include <dynamics/BodyNodeDynamics.h>
+#include <kinematics/BodyNode.h>
 
 #include "DynamicSimulationTab.hpp"
 
