@@ -14,6 +14,7 @@
 #include <iostream>
 #include <iomanip>
 #include <dynamics/SkeletonDynamics.h>
+#include <collision/CollisionSkeleton.h>
 #include <integration/EulerIntegrator.h>
 #include <GUI/Viewer.h>
 #include <GUI/GUI.h>
