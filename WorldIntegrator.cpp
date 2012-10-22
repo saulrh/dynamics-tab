@@ -317,10 +317,11 @@ WorldIntegrator::~WorldIntegrator()
 
 Eigen::VectorXd WorldIntegrator::getState()
 {
+    // std::cout << "DEBUG: outputting state" << std::endl;
+    // mWorldState->printToStdout();
+
     Eigen::VectorXd state;
     mWorldState->writeToVector(state);
-    // std::cout << "DEBUG: outputting state" << std::endl;
-    // std::cout << state << std::endl;
     return state;
 }
 
@@ -330,9 +331,9 @@ Eigen::VectorXd WorldIntegrator::getState()
 
 void WorldIntegrator::setState(Eigen::VectorXd state)
 {
-    // std::cout << "DEBUG: inputting state" << std::endl;
-    // std::cout << state << std::endl;
     mWorldState->readFromVector(mWorld, state);
+    // std::cout << "DEBUG: inputting state" << std::endl;
+    // mWorldState->printToStdout();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -350,7 +351,7 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
     Eigen::VectorXd deriv = Eigen::VectorXd::Zero(WorldState::getNumberOfDoFs(mWorld) * 2);
     int currentIndex = 0;
 
-    // std::cout << "DEBUG: start processing skeletons" << std::endl;
+    // std::cout << "DEBUG: derivative" << std::endl;
 
     // for each skeleton, calculate how that skeleton is going to try to behave
     for(int i = 0; i < mWorld->getNumSkeletons(); i++)
@@ -420,10 +421,31 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
             //           << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
-            // std::cout << "DEBUG: velupdate" << std::endl;
-            // std::cout << velUpdate << std::endl;
-            // std::cout << "DEBUG: qddot" << std::endl;
-            // std::cout << qddot << std::endl;
+
+            // std::cout << "  Skel " << i << " old vel, acc, force" << std::endl << "    ";
+            // for(unsigned int j = 0; j < velUpdate.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << mWorldState->mVelVects[i][j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < qddot.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << qddot[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < forces.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << forces[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < collisionForces.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << collisionForces[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < combinedVector.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << combinedVector[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < externalForces.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << externalForces[j] << " ";
+            // std::cout << std::endl;
         }
         // std::cout << "DEBUG: derivative" << std::endl;
         // std::cout << deriv << std::endl;
