@@ -22,6 +22,7 @@
 #include "WorldIntegrator.hpp"
 
 #include <iostream>
+#include <time.h>
 
 /**
  * @class DynamicSimulationTab
@@ -72,6 +73,7 @@ private:
     
     wxCheckBox* mStaticSkeletonCheckbox;
     wxTimer* mSimTimer;
+    int mTimerSetAt;
     
     WorldState* mCurrentSimState;
 };

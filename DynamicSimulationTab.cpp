@@ -277,6 +277,7 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         mSavedStates.erase(mSavedStates.begin() + mListBoxSelectedState);
         UpdateListBox();
         std::cout << "(I) Deleted state" << std::endl;
+        break;
     }
     case id_button_ReloadSimulation:
     {
@@ -289,6 +290,7 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         mSavedStates.resize(0);
         UpdateListBox();
         std::cout << "(I) Reloaded simulation" << std::endl;
+        break;
     }
     case id_button_WriteHistory:
     {
@@ -296,8 +298,8 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
             std::cout << "(!) Must have a world loaded to check collisions (!)" << std::endl;
             break;
         }
-        bool colliding = mWorld->checkCollision();
-        std::cout << "Collisions: " << colliding << std::endl;
+        PopulateTimeline();
+        break;
     }
     case id_button_InitDynamics:
     {
