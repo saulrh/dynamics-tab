@@ -54,6 +54,7 @@ public:
     void OnSlider(wxCommandEvent &evt);
     void OnButton(wxCommandEvent &evt);
     void OnListBox(wxCommandEvent &evt);
+    void OnCheckBox(wxCommandEvent &evt);
     void OnTimer(wxTimerEvent &evt);
     void PopulateTimeline();
     void UpdateListBox();
@@ -69,6 +70,7 @@ private:
     wxListBox* mStateListBox;
     int mListBoxSelectedState;
     
+    wxCheckBox* mStaticSkeletonCheckbox;
     wxTimer* mSimTimer;
     
     WorldState* mCurrentSimState;

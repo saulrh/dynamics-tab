@@ -39,6 +39,7 @@ enum DynamicSimulationTabEvents {
     id_button_LoadWorkingState,
     id_button_DeleteState,
     id_button_WriteHistory,
+    id_checkbox_SkeletonFixed,
     id_listbox_SavedStates,
     id_timer_Simulation
 };
@@ -54,6 +55,7 @@ EVT_BUTTON(id_button_LoadState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_LoadWorkingState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_DeleteState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_WriteHistory, DynamicSimulationTab::OnButton)
+EVT_CHECKBOX(id_checkbox_SkeletonFixed, DynamicSimulationTab::OnCheckBox)
 EVT_COMMAND(wxID_ANY, wxEVT_GRIP_SLIDER_CHANGE, DynamicSimulationTab::OnSlider)
 EVT_LISTBOX(id_listbox_SavedStates, DynamicSimulationTab::OnListBox)
 EVT_TIMER(id_timer_Simulation, DynamicSimulationTab::OnTimer)
@@ -83,6 +85,7 @@ GRIPTab(parent, id, pos, size, style)
     wxBoxSizer* simulationControlSizer = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* stateSizer = new wxBoxSizer(wxHORIZONTAL);
     wxBoxSizer* stateControlSizer = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* simulationPropertySizer = new wxBoxSizer(wxVERTICAL);
 
     mSimTimer = new wxTimer(this, id_timer_Simulation);
     mCurrentSimState = NULL;
@@ -90,6 +93,13 @@ GRIPTab(parent, id, pos, size, style)
     mSavedStates.resize(0);
     mStateListBox = new wxListBox(this, id_listbox_SavedStates);
     mListBoxSelectedState = -1;
+
+    mStaticSkeletonCheckbox = new wxCheckBox(this, id_checkbox_SkeletonFixed, wxT("Static object"));
+
+    simulationPropertySizer->Add(mStaticSkeletonCheckbox,
+                                 0,     // do not resize to fit proportions vertically
+                                 wxALL, // border all around
+                                 1);    // border width is 1 so buttons are close together
     
     simulationControlSizer->Add(new wxButton(this, id_button_RunSim, wxT("Toggle Simulation")),
                                 0,     // do not resize to fit proportions vertically
@@ -133,13 +143,17 @@ GRIPTab(parent, id, pos, size, style)
                     3,                                   // take up 3/4 of stateSizer
                     wxEXPAND | wxALIGN_CENTER | wxALL,   // borders all over, expand to fit
                     1);                                  // 1-pixel border
-    
+
+    tabBoxSizer->Add(simulationPropertySizer,
+                     1,         // take up 2/6 of the tab
+                     wxEXPAND | wxALIGN_CENTER | wxALL,
+                     1);
     tabBoxSizer->Add(simulationControlSizer,
                      1,         // take up 1/6 of the tab
                      wxEXPAND | wxALIGN_CENTER | wxALL,
                      1);
     tabBoxSizer->Add(stateSizer,
-                     5,         // take up 5/6 of the tab
+                     4,         // take up 3/6 of the tab
                      wxEXPAND | wxALIGN_CENTER | wxALL,
                      1);
 
@@ -341,6 +355,40 @@ void DynamicSimulationTab::OnTimer(wxTimerEvent &evt) {
     SimulateFrame();
 }
 
+
+////////////////////////////////////////////////////////////////
+// Checkbox toggled
+////////////////////////////////////////////////////////////////
+
+/**
+ * @function OnCheckBox
+ * @brief Handle CheckBox Events
+ */ 
+void DynamicSimulationTab::OnCheckBox( wxCommandEvent &evt ) {
+  int checkbox_num = evt.GetId();
+  bool checkbox_value = (bool)evt.GetSelection();
+
+  switch (checkbox_num) {
+  case id_checkbox_SkeletonFixed:
+  {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded (!)" << std::endl;
+            break;
+        }
+        if (mSelectedObject != NULL) {
+            mSelectedObject->setImmobileState(checkbox_value);
+        }
+        else if (mSelectedObject != NULL) {
+            mSelectedRobot->setImmobileState(checkbox_value);
+        }
+        else {
+            std::cout << "(!) Must have a robot or object selected to set fixedness (!)" << std::endl;
+            break;
+        }
+  }
+  }
+}
+    
 /////////////////////////////////////////////////////////////////////////////////////////////
 //#########################################################################################//
 //# helper functions                                                                      #//
@@ -412,21 +460,31 @@ void DynamicSimulationTab::GRIPStateChange() {
     
     case Return_Type_Object:
         mSelectedObject = (robotics::Object*) ( selectedTreeNode->data );
+        mSelectedRobot = NULL;
+        mSelectedNode = NULL;
         statusBuf = " Selected Object: " + mSelectedObject->getName();
         buf = "You clicked on object: " + mSelectedObject->getName();
-    
+        
+        mStaticSkeletonCheckbox->SetValue(mSelectedObject->getImmobileState());
+        
         // Enter action for object select events here:
     
         break;
     case Return_Type_Robot:
+        mSelectedObject = NULL;
         mSelectedRobot = (robotics::Robot*) ( selectedTreeNode->data );
+        mSelectedNode = NULL;
         statusBuf = " Selected Robot: " + mSelectedRobot->getName();
         buf = " You clicked on robot: " + mSelectedRobot->getName();
     
+        mStaticSkeletonCheckbox->SetValue(mSelectedRobot->getImmobileState());
+
         // Enter action for Robot select events here:
     
         break;
     case Return_Type_Node:
+        mSelectedObject = NULL;
+        mSelectedRobot = NULL;
         mSelectedNode = (dynamics::BodyNodeDynamics*) ( selectedTreeNode->data );
         statusBuf = " Selected Body Node: " + string(mSelectedNode->getName()) + " of Robot: "
             + ( (robotics::Robot*) mSelectedNode->getSkel() )->getName();
