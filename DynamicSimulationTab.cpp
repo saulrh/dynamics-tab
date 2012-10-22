@@ -462,6 +462,8 @@ void DynamicSimulationTab::SimulateFrame()
     wi.mWorldState->writeToWorld(mWorld);
     viewer->UpdateCamera();
 
+    mSimHistory.push_back(wi.mWorldState);
+
     std::cout << "Simulated frame T="
               << std::fixed
               << setprecision(3)
