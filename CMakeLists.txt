@@ -28,8 +28,8 @@ INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIRS} )
 MESSAGE(STATUS "${GLUT_glut_LIBRARY}")
 
 # Search all header and source files
-set ( dynamics_tab_src DynamicSimulationTab.cpp DynamicSimulationTabApp.cpp WorldIntegrator.cpp)
-set ( dynamics_tab_hdr DynamicSimulationTab.hpp WorldIntegrator.hpp)
+set ( dynamics_tab_src DynamicSimulationTab.cpp DynamicSimulationTabApp.cpp WorldIntegrator.cpp HuboKinematics.cpp)
+set ( dynamics_tab_hdr DynamicSimulationTab.hpp WorldIntegrator.hpp HuboKinematics.hpp)
 
 if(WIN32)
   set (wxWidgets_EXCLUDE_COMMON_LIBRARIES TRUE)
