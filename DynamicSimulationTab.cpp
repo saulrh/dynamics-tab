@@ -196,8 +196,13 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         else
         {
             std::cout << "(I) Starting simulation." << std::endl;
+            // save the start
+            if (mCurrentSimState == NULL)
+                mCurrentSimState = new WorldState(mWorld);
+            mSavedStates.push_back(mCurrentSimState);
+            UpdateListBox();
             // start timer, milliseconds
-            bool result = mSimTimer->Start(SIMULATION_TIMESTEP * 1000, false);
+            bool result = mSimTimer->Start(SIMULATION_TIMESTEP * 5000, false);
             if (!result)
                 std::cout << "(!) Could not start timer." << std::endl;
         }
