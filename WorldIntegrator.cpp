@@ -288,7 +288,6 @@ int WorldState::getNumberOfDoFs(robotics::World* w)
 WorldIntegrator::WorldIntegrator()
 {
     mWorld = NULL;
-    mTimeStep = 0.01;
     mWorldState = NULL;
 }
 
@@ -296,12 +295,10 @@ WorldIntegrator::WorldIntegrator()
  * @function WorldIntegrator
  * @brief Constructor with args. Sets mTimeStep and remembers w and state.
  */
-WorldIntegrator::WorldIntegrator(double timeStep, robotics::World* w, Eigen::Vector3d gravityVector)
+WorldIntegrator::WorldIntegrator(robotics::World* w)
 {
     mWorld = w;
-    mTimeStep = timeStep;
     mWorldState = new WorldState();
-    mGravity = gravityVector;
 }
 
 /**
@@ -419,7 +416,7 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
     // std::cout << "DEBUG: update state's time" << std::endl;
 
     // update the time counter
-    mWorldState->mT += mTimeStep;
+    mWorldState->mT += mWorld->mTimeStep;
 
     // and finally return the result
     return deriv;

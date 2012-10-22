@@ -209,7 +209,7 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
             mSavedStates.push_back(mCurrentSimState);
             UpdateListBox();
             // start timer, milliseconds
-            bool result = mSimTimer->Start(SIMULATION_TIMESTEP * 5000, false);
+            bool result = mSimTimer->Start(mWorld->mTimeStep * 1000, false);
             if (!result)
                 std::cout << "(!) Could not start timer." << std::endl;
         }
@@ -382,7 +382,7 @@ void DynamicSimulationTab::OnSlider(wxCommandEvent &evt) {
  * @brief Handle timer ticks
  */
 void DynamicSimulationTab::OnTimer(wxTimerEvent &evt) {
-    SimulateFrame(SIMULATION_TIMESTEP);
+    SimulateFrame();
 }
 
 
@@ -429,14 +429,14 @@ void DynamicSimulationTab::OnCheckBox( wxCommandEvent &evt ) {
 // simulate one tick forward
 ////////////////////////////////////////////////////////////////
 
-void DynamicSimulationTab::SimulateFrame(double dt)
+void DynamicSimulationTab::SimulateFrame()
 {
     if (mCurrentSimState == NULL)
         mCurrentSimState = new WorldState(mWorld);
-    WorldIntegrator wi = WorldIntegrator(dt, mWorld, Eigen::Vector3d(0.0, 0.0, -9.8));
+    WorldIntegrator wi = WorldIntegrator(mWorld);
     mCurrentSimState = new WorldState(mCurrentSimState);
     wi.mWorldState = mCurrentSimState;
-    mIntegrator.integrate(&wi, wi.mTimeStep);
+    mEuIntegrator.integrate(&wi, mWorld->mTimeStep);
     mCurrentSimState->writeToWorld(mWorld);
     viewer->UpdateCamera();
 }

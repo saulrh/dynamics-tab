@@ -23,8 +23,6 @@
 
 #include <iostream>
 
-#define SIMULATION_TIMESTEP 0.005
-
 /**
  * @class DynamicSimulationTab
  * @brief Uses DART's dynamic simulation capabilities
@@ -51,7 +49,7 @@ public:
                           long style = wxTAB_TRAVERSAL);
     virtual ~DynamicSimulationTab(){}
 
-    void SimulateFrame(double dt=SIMULATION_TIMESTEP);
+    void SimulateFrame();
     void OnSlider(wxCommandEvent &evt);
     void OnButton(wxCommandEvent &evt);
     void OnListBox(wxCommandEvent &evt);
