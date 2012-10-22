@@ -439,6 +439,15 @@ void DynamicSimulationTab::SimulateFrame()
     mEuIntegrator.integrate(&wi, mWorld->mTimeStep);
     mCurrentSimState->writeToWorld(mWorld);
     viewer->UpdateCamera();
+    std::cout << "T="
+              << std::fixed
+              << setprecision(3)
+              << mCurrentSimState->mT
+              << (mWorld->checkCollision() ? " Colliding" : "")
+              << std::endl;
+    for(int i = 0; i < mCurrentSimState->mPosVects.size(); i++)
+        if(std::isnan(mCurrentSimState->mPosVects[i][0]))
+            mSimTimer->Stop();
 }
 
 ////////////////////////////////////////////////////////////////
