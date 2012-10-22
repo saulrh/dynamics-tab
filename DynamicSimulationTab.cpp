@@ -47,6 +47,7 @@ enum DynamicSimulationTabEvents {
     id_button_InitDynamics,
     id_button_PunchBrick,
     id_button_PunchBrickHard,
+    id_button_BlockingWalk,
     id_checkbox_SkeletonFixed,
     id_listbox_SavedStates,
     id_timer_Simulation
@@ -66,6 +67,7 @@ EVT_BUTTON(id_button_WriteHistory, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_InitDynamics, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_PunchBrick, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_PunchBrickHard, DynamicSimulationTab::OnButton)
+EVT_BUTTON(id_button_BlockingWalk, DynamicSimulationTab::OnButton)
 EVT_CHECKBOX(id_checkbox_SkeletonFixed, DynamicSimulationTab::OnCheckBox)
 EVT_COMMAND(wxID_ANY, wxEVT_GRIP_SLIDER_CHANGE, DynamicSimulationTab::OnSlider)
 EVT_LISTBOX(id_listbox_SavedStates, DynamicSimulationTab::OnListBox)
@@ -120,6 +122,10 @@ GRIPTab(parent, id, pos, size, style)
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
     simulationPropertySizer->Add(new wxButton(this, id_button_PunchBrickHard, wxT("Punch Brick Harder")),
+                                0,     // do not resize to fit proportions vertically
+                                wxALL, // border all around
+                                1);    // border width is 1 so buttons are close together
+    simulationPropertySizer->Add(new wxButton(this, id_button_BlockingWalk, wxT("Blocking Walk")),
                                 0,     // do not resize to fit proportions vertically
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
@@ -365,6 +371,18 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         }
         static_cast<dynamics::BodyNodeDynamics*>(mWorld->getSkeleton(1)->getNode(0))->
             addExtForce(Vector3d(0.0, 0.0, 0.0), Vector3d(2000, 0, 10));
+        break;
+    }
+    case id_button_BlockingWalk:
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to check collisions (!)" << std::endl;
+            break;
+        }
+        HuboKinematics hk = HuboKinematics(mWorld, 0);
+        hk.InitLinkTable();
+        hk.WriteInitialPose(viewer);
+        // hk.HuboWalk(frame, viewer);
         break;
     }
     }
