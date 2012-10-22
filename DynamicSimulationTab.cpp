@@ -33,7 +33,7 @@ enum DynamicSimulationTabEvents {
     id_button_RunSim = 8345, // just to be safe
     id_button_RunFrame,
     id_button_StopSim,
-    id_button_ClearHistory,
+    id_button_ReloadSimulation,
     id_button_SaveState,
     id_button_LoadState,
     id_button_LoadWorkingState,
@@ -48,7 +48,7 @@ BEGIN_EVENT_TABLE(DynamicSimulationTab, wxPanel)
 EVT_BUTTON(id_button_RunSim, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_RunFrame, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_StopSim, DynamicSimulationTab::OnButton)
-EVT_BUTTON(id_button_ClearHistory, DynamicSimulationTab::OnButton)
+EVT_BUTTON(id_button_ReloadSimulation, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_SaveState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_LoadState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_LoadWorkingState, DynamicSimulationTab::OnButton)
@@ -99,7 +99,7 @@ GRIPTab(parent, id, pos, size, style)
                                 0,     // do not resize to fit proportions vertically
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
-    simulationControlSizer->Add(new wxButton(this, id_button_ClearHistory, wxT("Clear History")),
+    simulationControlSizer->Add(new wxButton(this, id_button_ReloadSimulation, wxT("Reload Sim")),
                                 0,     // do not resize to fit proportions vertically
                                 wxALL, // border all around
                                 1);    // border width is 1 so buttons are close together
@@ -251,6 +251,18 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         mSavedStates.erase(mSavedStates.begin() + mListBoxSelectedState);
         UpdateListBox();
         std::cout << "(I) Deleted state" << std::endl;
+    }
+    case id_button_ReloadSimulation:
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to reload (!)" << std::endl;
+            break;
+        }
+        std::cout << "(I) Reloading simulation stuff" << std::endl;
+        mCurrentSimState = new WorldState(mWorld);
+        mSavedStates.resize(0);
+        UpdateListBox();
+        std::cout << "(I) Reloaded simulation" << std::endl;
     }
     }
 }
