@@ -154,17 +154,18 @@ void WorldState::writeToVector(Eigen::VectorXd& serState)
 
     currentIndex = 0;
     for(unsigned int i = 0; i < mPosVects.size(); i++)
+    {
         for(unsigned int j = 0; j < mPosVects[i].size(); j++)
         {
             serState[currentIndex] = mPosVects[i][j];
             currentIndex++;
         }
-    for(unsigned int i = 0; i < mVelVects.size(); i++)
         for(unsigned int j = 0; j < mVelVects[i].size(); j++)
         {
             serState[currentIndex] = mVelVects[i][j];
             currentIndex++;
         }
+    }
 
     // printVectToStdout(serState);
 }
@@ -374,9 +375,12 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
             //           << invMassMatrix.cols()
             //           << " cols"
             //           << std::endl;
-            Eigen::MatrixXd forces = (-skel->getCombinedVector()
-                                    + skel->getExternalForces()
-                                    + mWorld->mCollisionHandle->getConstraintForce(i));
+            Eigen::VectorXd collisionForces = mWorld->mCollisionHandle->getConstraintForce(i);
+            Eigen::VectorXd externalForces = skel->getExternalForces();
+            Eigen::VectorXd combinedVector = -skel->getCombinedVector();
+            Eigen::VectorXd forces = (combinedVector
+                                      + externalForces
+                                      + collisionForces);
             // std::cout << "DEBUG: forces matrix  has "
             //           << forces.rows()
             //           << " rows and "
