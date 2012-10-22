@@ -332,8 +332,8 @@ Eigen::VectorXd WorldIntegrator::getState()
 void WorldIntegrator::setState(Eigen::VectorXd state)
 {
     mWorldState->readFromVector(mWorld, state);
-    // std::cout << "DEBUG: inputting state" << std::endl;
-    // mWorldState->printToStdout();
+    std::cout << "DEBUG: inputting state" << std::endl;
+    mWorldState->printToStdout();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -358,45 +358,42 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
     {
         dynamics::SkeletonDynamics* skel = mWorld->getSkeleton(i);
         
-        if(skel->getImmobileState())
-        {
-            // std::cout << "DEBUG: immobile object" << std::endl;
-            currentIndex += skel->getNumDofs() * 2;
-        }
-        else
-        {
-            // std::cout << "DEBUG: compute dynamics" << std::endl;
-            skel->computeDynamics(mGravity, mWorldState->mVelVects[i], true);
+        // std::cout << "DEBUG: compute dynamics" << std::endl;
+        skel->computeDynamics(mGravity, mWorldState->mVelVects[i], true);
             
-            // std::cout << "DEBUG: compute qddot" << std::endl;
-            Eigen::MatrixXd invMassMatrix = skel->getInvMassMatrix();
-            // std::cout << "DEBUG: inv mass matrix has "
-            //           << invMassMatrix.rows()
-            //           << " rows and "
-            //           << invMassMatrix.cols()
-            //           << " cols"
-            //           << std::endl;
-            Eigen::VectorXd collisionForces = mWorld->mCollisionHandle->getConstraintForce(i);
-            Eigen::VectorXd externalForces = skel->getExternalForces();
-            Eigen::VectorXd combinedVector = -skel->getCombinedVector();
-            Eigen::VectorXd forces = (combinedVector
-                                      + externalForces
-                                      + collisionForces);
-            // std::cout << "DEBUG: forces matrix  has "
-            //           << forces.rows()
-            //           << " rows and "
-            //           << forces.cols()
-            //           << " cols"
-            //           << std::endl;
+        // std::cout << "DEBUG: compute qddot" << std::endl;
+        Eigen::MatrixXd invMassMatrix = skel->getInvMassMatrix();
+        // std::cout << "DEBUG: inv mass matrix has "
+        //           << invMassMatrix.rows()
+        //           << " rows and "
+        //           << invMassMatrix.cols()
+        //           << " cols"
+        //           << std::endl;
+        Eigen::VectorXd collisionForces = mWorld->mCollisionHandle->getConstraintForce(i);
+        Eigen::VectorXd externalForces = skel->getExternalForces();
+        Eigen::VectorXd combinedVector = -skel->getCombinedVector();
+        Eigen::VectorXd forces = (combinedVector
+                                  + externalForces
+                                  + collisionForces);
+        // std::cout << "DEBUG: forces matrix  has "
+        //           << forces.rows()
+        //           << " rows and "
+        //           << forces.cols()
+        //           << " cols"
+        //           << std::endl;
 
-            // std::cout << "DEBUG: compute qddot" << std::endl;
-            Eigen::VectorXd qddot = invMassMatrix * forces;
+        // std::cout << "DEBUG: compute qddot" << std::endl;
+        Eigen::VectorXd qddot = invMassMatrix * forces;
 
-            // std::cout << "DEBUG: clamp rotations to [-pi, pi]" << std::endl;
-            skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
+        // std::cout << "DEBUG: clamp rotations to [-pi, pi]" << std::endl;
+        skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
 
-            // std::cout << "DEBUG: set velocity component of derivative" << std::endl;
-            Eigen::VectorXd velUpdate = mWorldState->mVelVects[i] + (qddot * mTimeStep);
+        // std::cout << "DEBUG: set velocity component of derivative" << std::endl;
+        Eigen::VectorXd velUpdate = (qddot * mTimeStep);
+        Eigen::VectorXd newvel = mWorldState->mVelVects[i] + velUpdate;
+
+        if(!skel->getImmobileState())
+        {
             // std::cout << "       ";
             // for(unsigned int i = 0; i < velUpdate.size(); i++)
             //     std::cout << velUpdate[i] << " ";
@@ -421,35 +418,40 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
             //           << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
-
-            // std::cout << "  Skel " << i << " old vel, acc, force" << std::endl << "    ";
-            // for(unsigned int j = 0; j < velUpdate.size(); j++)
-            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << mWorldState->mVelVects[i][j] << " ";
-            // std::cout << std::endl;
-            // std::cout << "    ";
-            // for(unsigned int j = 0; j < qddot.size(); j++)
-            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << qddot[j] << " ";
-            // std::cout << std::endl;
-            // std::cout << "    ";
-            // for(unsigned int j = 0; j < forces.size(); j++)
-            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << forces[j] << " ";
-            // std::cout << std::endl;
-            // std::cout << "    ";
-            // for(unsigned int j = 0; j < collisionForces.size(); j++)
-            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << collisionForces[j] << " ";
-            // std::cout << std::endl;
-            // std::cout << "    ";
-            // for(unsigned int j = 0; j < combinedVector.size(); j++)
-            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << combinedVector[j] << " ";
-            // std::cout << std::endl;
-            // std::cout << "    ";
-            // for(unsigned int j = 0; j < externalForces.size(); j++)
-            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << externalForces[j] << " ";
-            // std::cout << std::endl;
         }
-        // std::cout << "DEBUG: derivative" << std::endl;
-        // std::cout << deriv << std::endl;
+        else
+        {
+            // std::cout << "DEBUG: immobile object" << std::endl;
+            currentIndex += skel->getNumDofs() * 2;
+        }
+
+        std::cout << "  Skel " << i << " vel update, acc, force" << std::endl << "    ";
+        for(unsigned int j = 0; j < velUpdate.size(); j++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << velUpdate[j] << " ";
+        std::cout << std::endl;
+        std::cout << "    ";
+        for(unsigned int j = 0; j < qddot.size(); j++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << qddot[j] << " ";
+        std::cout << std::endl;
+        std::cout << "    ";
+        for(unsigned int j = 0; j < forces.size(); j++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << forces[j] << " ";
+        std::cout << std::endl;
+        std::cout << "    ";
+        for(unsigned int j = 0; j < collisionForces.size(); j++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << collisionForces[j] << " ";
+        std::cout << std::endl;
+        std::cout << "    ";
+        for(unsigned int j = 0; j < combinedVector.size(); j++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << combinedVector[j] << " ";
+        std::cout << std::endl;
+        std::cout << "    ";
+        for(unsigned int j = 0; j < externalForces.size(); j++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << externalForces[j] << " ";
+        std::cout << std::endl;
     }
+    // std::cout << "DEBUG: derivative" << std::endl;
+    // std::cout << deriv << std::endl;
     
     // std::cout << "DEBUG: done processing skeletons" << std::endl;
 
