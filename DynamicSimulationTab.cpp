@@ -14,6 +14,7 @@
 #include <Tabs/GRIPTab.h>
 
 #include <iostream>
+#include <iomanip>
 
 #include <robotics/World.h>
 
