@@ -35,6 +35,12 @@ public:
     int mNumTimeSteps;
     double getTimeEnd() { return mTimeInit + (mdT * mNumTimeSteps); }
 
+    int mCurrentWalkFrame;
+
+    void DoNextWalkFrame();
+    void DoWalkFrame(double t);
+    void DoWalkFrame(int timestep);
+
     int mNumWalkSteps;
     
     Eigen::VectorXd mLegVals;

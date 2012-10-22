@@ -379,6 +379,11 @@ void HuboKinematics::HuboWalk(GRIPFrame* frame, Viewer* viewer){
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+//#########################################################################################//
+//# hubowalk object for walking during other tasks                                        #//
+//#########################################################################################//
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 HuboWalk::HuboWalk(double startTime, double dT, int numTimeSteps, int numWalkSteps)
 {
@@ -396,4 +401,14 @@ HuboWalk::HuboWalk(double startTime, double dT, int numTimeSteps, int numWalkSte
     mForwardStepStandIncrement = mBaseIncrement/5.0;
 }
 
+void DoNextWalkFrame()
+{
+}
 
+void DoWalkFrame(double t)
+{
+}
+
+void DoWalkFrame(int timestep)
+{
+}
