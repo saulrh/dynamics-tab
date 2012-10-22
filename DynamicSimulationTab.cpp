@@ -343,7 +343,7 @@ void DynamicSimulationTab::SimulateFrame()
 {
     if (mCurrentSimState == NULL)
         mCurrentSimState = new WorldState(mWorld);
-    WorldIntegrator wi = WorldIntegrator(SIMULATION_TIMESTEP, mWorld);
+    WorldIntegrator wi = WorldIntegrator(SIMULATION_TIMESTEP, mWorld, Eigen::Vector3d(0.0, 0.0, -9.8));
     mCurrentSimState = new WorldState(mCurrentSimState);
     wi.mWorldState = mCurrentSimState;
     mIntegrator.integrate(&wi, wi.mTimeStep);
