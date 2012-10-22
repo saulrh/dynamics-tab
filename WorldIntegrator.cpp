@@ -127,11 +127,12 @@ void WorldState::readFromVector(robotics::World* w, Eigen::VectorXd& serState)
     for(int s = 0; s < w->getNumSkeletons(); s++)
     {
         for (int d = 0; d < w->getSkeleton(s)->getNumDofs(); d++)
-        {
             mPosVects[s][d] = serState[currentIndex++];
+        for (int d = 0; d < w->getSkeleton(s)->getNumDofs(); d++)
             mVelVects[s][d] = serState[currentIndex++];
-        }
     }
+
+    // printToStdout();
 }
 
 /**
@@ -156,15 +157,16 @@ void WorldState::writeToVector(Eigen::VectorXd& serState)
         for(unsigned int j = 0; j < mPosVects[i].size(); j++)
         {
             serState[currentIndex] = mPosVects[i][j];
-            currentIndex += 2;
+            currentIndex++;
         }
-    currentIndex = 1;
     for(unsigned int i = 0; i < mVelVects.size(); i++)
         for(unsigned int j = 0; j < mVelVects[i].size(); j++)
         {
             serState[currentIndex] = mVelVects[i][j];
-            currentIndex += 2;
+            currentIndex++;
         }
+
+    // printVectToStdout(serState);
 }
 
 /**
