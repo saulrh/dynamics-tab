@@ -215,7 +215,10 @@ void WorldState::writeToWorld(robotics::World* w)
     for(int o = 0; o < w->getNumObjects(); o++)
         w->getObject(o)->update();
 
-    // printWorldToStdout(w);
+    for(int s = 0; s < w->getNumSkeletons(); s++)
+        w->getSkeleton(s)->computeDynamics(w->mGravity, mVelVects[s], true);
+
+    w->mCollisionHandle->applyContactForces();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -330,8 +333,9 @@ Eigen::VectorXd WorldIntegrator::getState()
 void WorldIntegrator::setState(Eigen::VectorXd state)
 {
     mWorldState->readFromVector(mWorld, state);
-    std::cout << "DEBUG: inputting state" << std::endl;
-    mWorldState->printToStdout();
+
+    // std::cout << "DEBUG: inputting state" << std::endl;
+    // mWorldState->printToStdout();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -343,9 +347,6 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
     mWorldState->writeToWorld(mWorld);
     // std::cout << "DEBUG: calculate contact forces" << std::endl;
 
-    // calulate contact forces
-    mWorld->mCollisionHandle->applyContactForces();
-
     Eigen::VectorXd deriv = Eigen::VectorXd::Zero(WorldState::getNumberOfDoFs(mWorld) * 2);
     int currentIndex = 0;
 
@@ -355,58 +356,60 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
     for(int i = 0; i < mWorld->getNumSkeletons(); i++)
     {
         dynamics::SkeletonDynamics* skel = mWorld->getSkeleton(i);
-        
-        Eigen::MatrixXd massMatrix = skel->getMassMatrix();
-        Eigen::VectorXd collisionForces = mWorld->mCollisionHandle->getConstraintForce(i);
-        Eigen::VectorXd externalForces = skel->getExternalForces();
-        Eigen::VectorXd combinedVector = -skel->getCombinedVector();
-        Eigen::VectorXd forces = (combinedVector
-                                  + externalForces
-                                  + collisionForces);
-
-        Eigen::VectorXd qddot = massMatrix.fullPivHouseholderQr().solve(forces);
-
-        skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
-
-        Eigen::VectorXd velUpdate = (qddot * mWorld->mTimeStep);
-        Eigen::VectorXd newvel = mWorldState->mVelVects[i] + velUpdate;
-
-        if(!skel->getImmobileState())
+        if(skel->getImmobileState())
         {
+            currentIndex += skel->getNumDofs() * 2;
+        }
+        else
+        {
+            Eigen::MatrixXd massMatrix = skel->getMassMatrix();
+            Eigen::VectorXd combinedVector = -skel->getCombinedVector();
+            Eigen::VectorXd externalForces = skel->getExternalForces();
+            Eigen::VectorXd collisionForces = mWorld->mCollisionHandle->getConstraintForce(i);
+            Eigen::VectorXd forces = (combinedVector
+                                      + externalForces
+                                      + collisionForces);
+
+            Eigen::VectorXd qddot = massMatrix.fullPivHouseholderQr().solve(forces);
+
+            skel->clampRotation(mWorldState->mPosVects[i], mWorldState->mVelVects[i]);
+
+            Eigen::VectorXd velUpdate = (qddot * mWorld->mTimeStep);
+            Eigen::VectorXd newvel = mWorldState->mVelVects[i] + velUpdate;
+
             deriv.segment(currentIndex, skel->getNumDofs()) = newvel;
             currentIndex += skel->getNumDofs();
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
+            // std::cout << "  Skel " << i << " vel update, new vel, accel, force, collision force, internal, external" << std::endl << "    ";
+            // for(unsigned int j = 0; j < velUpdate.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << velUpdate[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < newvel.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << newvel[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < qddot.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << qddot[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < forces.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << forces[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < collisionForces.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << collisionForces[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < combinedVector.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << combinedVector[j] << " ";
+            // std::cout << std::endl;
+            // std::cout << "    ";
+            // for(unsigned int j = 0; j < externalForces.size(); j++)
+            //     std::cout << std::fixed << std::setw(7) << setprecision(3) << externalForces[j] << " ";
+            // std::cout << std::endl;
         }
-        else
-        {
-            currentIndex += skel->getNumDofs() * 2;
-        }
-
-        std::cout << "  Skel " << i << " vel update, acc, force" << std::endl << "    ";
-        for(unsigned int j = 0; j < velUpdate.size(); j++)
-            std::cout << std::fixed << std::setw(7) << setprecision(3) << velUpdate[j] << " ";
-        std::cout << std::endl;
-        std::cout << "    ";
-        for(unsigned int j = 0; j < qddot.size(); j++)
-            std::cout << std::fixed << std::setw(7) << setprecision(3) << qddot[j] << " ";
-        std::cout << std::endl;
-        std::cout << "    ";
-        for(unsigned int j = 0; j < forces.size(); j++)
-            std::cout << std::fixed << std::setw(7) << setprecision(3) << forces[j] << " ";
-        std::cout << std::endl;
-        std::cout << "    ";
-        for(unsigned int j = 0; j < collisionForces.size(); j++)
-            std::cout << std::fixed << std::setw(7) << setprecision(3) << collisionForces[j] << " ";
-        std::cout << std::endl;
-        std::cout << "    ";
-        for(unsigned int j = 0; j < combinedVector.size(); j++)
-            std::cout << std::fixed << std::setw(7) << setprecision(3) << combinedVector[j] << " ";
-        std::cout << std::endl;
-        std::cout << "    ";
-        for(unsigned int j = 0; j < externalForces.size(); j++)
-            std::cout << std::fixed << std::setw(7) << setprecision(3) << externalForces[j] << " ";
-        std::cout << std::endl;
     }
     // std::cout << "DEBUG: derivative" << std::endl;
     // std::cout << deriv << std::endl;

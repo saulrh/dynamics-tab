@@ -97,12 +97,12 @@ GRIPTab(parent, id, pos, size, style)
     mStateListBox = new wxListBox(this, id_listbox_SavedStates);
     mListBoxSelectedState = -1;
 
-    mStaticSkeletonCheckbox = new wxCheckBox(this, id_checkbox_SkeletonFixed, wxT("Static object"));
+    // mStaticSkeletonCheckbox = new wxCheckBox(this, id_checkbox_SkeletonFixed, wxT("Static object"));
 
-    simulationPropertySizer->Add(mStaticSkeletonCheckbox,
-                                 0,     // do not resize to fit proportions vertically
-                                 wxALL, // border all around
-                                 1);    // border width is 1 so buttons are close together
+    // simulationPropertySizer->Add(mStaticSkeletonCheckbox,
+    //                              0,     // do not resize to fit proportions vertically
+    //                              wxALL, // border all around
+    //                              1);    // border width is 1 so buttons are close together
     simulationPropertySizer->Add(new wxButton(this, id_button_InitDynamics, wxT("Init Dynamics")),
                                 0,     // do not resize to fit proportions vertically
                                 wxALL, // border all around
@@ -209,7 +209,7 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
             mSavedStates.push_back(mCurrentSimState);
             UpdateListBox();
             // start timer, milliseconds
-            bool result = mSimTimer->Start(mWorld->mTimeStep * 1000, false);
+            bool result = mSimTimer->Start(mWorld->mTimeStep * 5000, false);
             if (!result)
                 std::cout << "(!) Could not start timer." << std::endl;
         }
@@ -305,8 +305,21 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
             std::cout << "(!) Must have a world loaded to check collisions (!)" << std::endl;
             break;
         }
-        mWorld->mTimeStep = 0.001;
+        mCurrentSimState = new WorldState(mWorld);
+        mWorld->mTimeStep = .001;
         mWorld->mGravity = Eigen::Vector3d(0, 0, -9.8);
+        for(int i = 0; i < mWorld->getNumSkeletons(); i++)
+        {
+            dynamics::SkeletonDynamics* skel = mWorld->getSkeleton(i);
+            skel->initDynamics();
+            skel->setPose(mCurrentSimState->mPosVects[i], true, true);
+            skel->computeDynamics(mWorld->mGravity, mCurrentSimState->mVelVects[i], true);
+        }
+        mWorld->getSkeleton(0)->setImmobileState(true);
+        // mWorld->getSkeleton(1)->setImmobileState(true);
+        // mWorld->getSkeleton(2)->setImmobileState(true);
+        // mWorld->getSkeleton(3)->setImmobileState(true);
+        // mWorld->getSkeleton(4)->setImmobileState(true);
         mWorld->rebuildCollision();
     }
     }
@@ -406,10 +419,10 @@ void DynamicSimulationTab::OnCheckBox( wxCommandEvent &evt ) {
             break;
         }
         if (mSelectedObject != NULL) {
-            mSelectedObject->setImmobileState(checkbox_value);
+            // mSelectedObject->setImmobileState(checkbox_value);
         }
-        else if (mSelectedObject != NULL) {
-            mSelectedRobot->setImmobileState(checkbox_value);
+        else if (mSelectedRobot != NULL) {
+            // mSelectedRobot->setImmobileState(checkbox_value);
         }
         else {
             std::cout << "(!) Must have a robot or object selected to set fixedness (!)" << std::endl;
@@ -431,15 +444,23 @@ void DynamicSimulationTab::OnCheckBox( wxCommandEvent &evt ) {
 
 void DynamicSimulationTab::SimulateFrame()
 {
+    std::cout << "Simulating frame" << std::endl;
+    
     if (mCurrentSimState == NULL)
-        mCurrentSimState = new WorldState(mWorld);
+    {
+        std::cout << "(!) must init dynamics before simulating (!)" << std::endl;
+        return;
+    }
+
     WorldIntegrator wi = WorldIntegrator(mWorld);
     mCurrentSimState = new WorldState(mCurrentSimState);
+
     wi.mWorldState = mCurrentSimState;
     mEuIntegrator.integrate(&wi, mWorld->mTimeStep);
-    mCurrentSimState->writeToWorld(mWorld);
+    wi.mWorldState->writeToWorld(mWorld);
     viewer->UpdateCamera();
-    std::cout << "T="
+
+    std::cout << "Simulated frame T="
               << std::fixed
               << setprecision(3)
               << mCurrentSimState->mT
@@ -504,7 +525,7 @@ void DynamicSimulationTab::GRIPStateChange() {
         statusBuf = " Selected Object: " + mSelectedObject->getName();
         buf = "You clicked on object: " + mSelectedObject->getName();
         
-        mStaticSkeletonCheckbox->SetValue(mSelectedObject->getImmobileState());
+        // mStaticSkeletonCheckbox->SetValue(mSelectedObject->getImmobileState());
         
         // Enter action for object select events here:
     
@@ -516,7 +537,7 @@ void DynamicSimulationTab::GRIPStateChange() {
         statusBuf = " Selected Robot: " + mSelectedRobot->getName();
         buf = " You clicked on robot: " + mSelectedRobot->getName();
     
-        mStaticSkeletonCheckbox->SetValue(mSelectedRobot->getImmobileState());
+        // mStaticSkeletonCheckbox->SetValue(mSelectedRobot->getImmobileState());
 
         // Enter action for Robot select events here:
     
