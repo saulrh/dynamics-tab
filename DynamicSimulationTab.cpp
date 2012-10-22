@@ -483,20 +483,19 @@ void DynamicSimulationTab::SimulateFrame()
  */
 void DynamicSimulationTab::PopulateTimeline()
 {
-    // TODO: get simulation_dt, calculate t
-    int numsteps = mSimHistory.size();
-    double simulation_dt = 0;
-    double t = numsteps * simulation_dt;
+    std::cout << " (+) Populating Timeline. dt: " << mWorld->mTimeStep << " T: " << mSimHistory.back()->mT << std::endl;
 
-    cout << "-->(+) Populating Timeline - Increment: " << simulation_dt << " Total time: " << t << " Steps: " << numsteps << endl;
+    frame->InitTimer(string("Simulation_History"), mWorld->mTimeStep);
 
-    frame->InitTimer(string("Simulation_History"), simulation_dt);
     for( std::vector<WorldState*>::iterator it = mSimHistory.begin(); it != mSimHistory.end(); it++)
     {
         // set each robot and object to the position recorded for that frame
-        // mWorld->getRobot(mRobotId)->setQuickDofs( *it );
-        // mWorld->getRobot(mRobotId)->update();
+        (*it)->writeToWorld(mWorld);
+        
+        
+        
         // and record that world configuration
+        viewer->UpdateCamera();
         frame->AddWorld( mWorld );
     }
 }
