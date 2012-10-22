@@ -283,6 +283,15 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         UpdateListBox();
         std::cout << "(I) Reloaded simulation" << std::endl;
     }
+    case id_button_WriteHistory:
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to check collisions (!)" << std::endl;
+            break;
+        }
+        bool colliding = mWorld->checkCollision();
+        std::cout << "Collisions: " << colliding << std::endl;
+    }
     }
 }
 
