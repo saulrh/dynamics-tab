@@ -40,6 +40,7 @@ enum DynamicSimulationTabEvents {
     id_button_LoadWorkingState,
     id_button_DeleteState,
     id_button_WriteHistory,
+    id_button_InitDynamics,
     id_checkbox_SkeletonFixed,
     id_listbox_SavedStates,
     id_timer_Simulation
@@ -56,6 +57,7 @@ EVT_BUTTON(id_button_LoadState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_LoadWorkingState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_DeleteState, DynamicSimulationTab::OnButton)
 EVT_BUTTON(id_button_WriteHistory, DynamicSimulationTab::OnButton)
+EVT_BUTTON(id_button_InitDynamics, DynamicSimulationTab::OnButton)
 EVT_CHECKBOX(id_checkbox_SkeletonFixed, DynamicSimulationTab::OnCheckBox)
 EVT_COMMAND(wxID_ANY, wxEVT_GRIP_SLIDER_CHANGE, DynamicSimulationTab::OnSlider)
 EVT_LISTBOX(id_listbox_SavedStates, DynamicSimulationTab::OnListBox)
@@ -101,6 +103,10 @@ GRIPTab(parent, id, pos, size, style)
                                  0,     // do not resize to fit proportions vertically
                                  wxALL, // border all around
                                  1);    // border width is 1 so buttons are close together
+    simulationPropertySizer->Add(new wxButton(this, id_button_InitDynamics, wxT("Init Dynamics")),
+                                0,     // do not resize to fit proportions vertically
+                                wxALL, // border all around
+                                1);    // border width is 1 so buttons are close together
     
     simulationControlSizer->Add(new wxButton(this, id_button_RunSim, wxT("Toggle Simulation")),
                                 0,     // do not resize to fit proportions vertically
@@ -292,6 +298,16 @@ void DynamicSimulationTab::OnButton(wxCommandEvent &evt) {
         }
         bool colliding = mWorld->checkCollision();
         std::cout << "Collisions: " << colliding << std::endl;
+    }
+    case id_button_InitDynamics:
+    {
+        if ( mWorld == NULL ) {
+            std::cout << "(!) Must have a world loaded to check collisions (!)" << std::endl;
+            break;
+        }
+        mWorld->mTimeStep = 0.001;
+        mWorld->mGravity = Eigen::Vector3d(0, 0, -9.8);
+        mWorld->rebuildCollision();
     }
     }
 }
