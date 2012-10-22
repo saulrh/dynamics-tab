@@ -562,13 +562,13 @@ void DynamicSimulationTab::PopulateTimeline()
     std::cout << " (+) Populating Timeline. dt: " << mWorld->mTimeStep << " T: " << mSimHistory.back()->mT << std::endl;
 
     frame->InitTimer(string("Simulation_History"), mWorld->mTimeStep);
-
+    // initialize a HuboWalk somewhere in here
     for( std::vector<WorldState*>::iterator it = mSimHistory.begin(); it != mSimHistory.end(); it++)
     {
         // set each robot and object to the position recorded for that frame
         (*it)->writeToWorld(mWorld, false);
         
-        
+        // HuboWalk::DoNextWalkFrame()
         
         // and record that world configuration
         viewer->UpdateCamera();
