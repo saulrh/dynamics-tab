@@ -118,6 +118,9 @@ WorldState::~WorldState()
  */
 void WorldState::readFromVector(robotics::World* w, Eigen::VectorXd& serState)
 {
+    // std::cout << "vect to state" << std::endl;
+    // printVectToStdout(serState);
+
     int currentIndex = 0;
     mPosVects.resize(w->getNumSkeletons());
     mVelVects.resize(w->getNumSkeletons());
@@ -138,6 +141,9 @@ void WorldState::readFromVector(robotics::World* w, Eigen::VectorXd& serState)
  */
 void WorldState::writeToVector(Eigen::VectorXd& serState)
 {
+    // std::cout << "state to vect" << std::endl;
+    // printToStdout();
+
     int currentIndex;
 
     int nDofs = 0;
@@ -168,6 +174,9 @@ void WorldState::writeToVector(Eigen::VectorXd& serState)
  */
 void WorldState::readFromWorld(robotics::World* w)
 {
+    // std::cout << "world to state" << std::endl;
+    // printWorldToStdout(w);
+    
     mPosVects.resize(w->getNumSkeletons());
     mVelVects.resize(w->getNumSkeletons());
 
@@ -175,6 +184,8 @@ void WorldState::readFromWorld(robotics::World* w)
         w->getSkeleton(s)->getPose(mPosVects[s]);
         mVelVects[s] = Eigen::VectorXd::Zero(mPosVects[s].size());
     }
+
+    // printToStdout();
 }
 
 /**
@@ -184,6 +195,9 @@ void WorldState::readFromWorld(robotics::World* w)
  */
 void WorldState::writeToWorld(robotics::World* w)
 {
+    // std::cout << "state to world" << std::endl;
+    // printToStdout();
+
     for(int s = 0; s < w->getNumSkeletons(); s++) {
         // std::cout << "DEBUG: setting pose of skel " << s << " to" << std::endl;
         // std::cout << "       ";
@@ -196,6 +210,8 @@ void WorldState::writeToWorld(robotics::World* w)
         w->getRobot(r)->update();
     for(int o = 0; o < w->getNumObjects(); o++)
         w->getObject(o)->update();
+
+    // printWorldToStdout(w);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -298,9 +314,11 @@ WorldIntegrator::~WorldIntegrator()
 
 Eigen::VectorXd WorldIntegrator::getState()
 {
-    Eigen::VectorXd result;
-    mWorldState->writeToVector(result);
-    return result;
+    Eigen::VectorXd state;
+    mWorldState->writeToVector(state);
+    // std::cout << "DEBUG: outputting state" << std::endl;
+    // std::cout << state << std::endl;
+    return state;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -309,6 +327,8 @@ Eigen::VectorXd WorldIntegrator::getState()
 
 void WorldIntegrator::setState(Eigen::VectorXd state)
 {
+    // std::cout << "DEBUG: inputting state" << std::endl;
+    // std::cout << state << std::endl;
     mWorldState->readFromVector(mWorld, state);
 }
 
@@ -394,7 +414,13 @@ Eigen::VectorXd WorldIntegrator::evalDeriv()
             //           << std::endl;
             deriv.segment(currentIndex, skel->getNumDofs()) = qddot;
             currentIndex += skel->getNumDofs();
+            // std::cout << "DEBUG: velupdate" << std::endl;
+            // std::cout << velUpdate << std::endl;
+            // std::cout << "DEBUG: qddot" << std::endl;
+            // std::cout << qddot << std::endl;
         }
+        // std::cout << "DEBUG: derivative" << std::endl;
+        // std::cout << deriv << std::endl;
     }
     
     // std::cout << "DEBUG: done processing skeletons" << std::endl;
