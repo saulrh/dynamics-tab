@@ -7,7 +7,6 @@
  */
 
 #include <wx/wx.h>
-#include <GUI/Viewer.h>
 #include <GUI/GUI.h>
 #include <GUI/GRIPSlider.h>
 #include <GUI/GRIPFrame.h>
@@ -24,6 +23,9 @@
 #include <kinematics/BodyNode.h>
 
 #include "DynamicSimulationTab.hpp"
+#include "HuboKinematics.hpp"
+
+#include <GUI/Viewer.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //#########################################################################################//
