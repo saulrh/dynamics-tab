@@ -95,6 +95,11 @@ public:
 
     static int getUID() { static int sUID = 0; return sUID++; }
     static int getNumberOfDoFs(robotics::World* w);
+
+
+    void printToStdout();
+    static void printVectToStdout(Eigen::VectorXd& v);
+    static void printWorldToStdout(robotics::World* w);
 };
 
 /**

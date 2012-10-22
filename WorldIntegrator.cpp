@@ -12,6 +12,7 @@
 #include <dynamics/BodyNodeDynamics.h>
 #include <robotics/World.h>
 #include <iostream>
+#include <iomanip>
 #include <dynamics/SkeletonDynamics.h>
 #include <integration/EulerIntegrator.h>
 #include <GUI/Viewer.h>
@@ -199,6 +200,44 @@ void WorldState::writeToWorld(robotics::World* w)
 
 ////////////////////////////////////////////////////////////////
 // utility functions
+
+void WorldState::printToStdout()
+{
+    std::cout << "  state" << std::endl;
+    for(unsigned int s = 0; s < mPosVects.size(); s++)
+    {
+        std::cout << "    skel " << s << std::endl << "      ";
+        for (unsigned int d = 0; d < mPosVects[s].size(); d++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << mPosVects[s][d];
+        std::cout << std::endl << "      ";
+        for (unsigned int d = 0; d < mVelVects[s].size(); d++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3)  << mVelVects[s][d];
+        std::cout << std::endl;
+    }
+}
+
+void WorldState::printVectToStdout(Eigen::VectorXd& v)
+{
+    std::cout << "  vect" << std::endl << "    ";
+    for(unsigned int i = 0; i < v.size(); i++)
+        std::cout << setiosflags(ios::fixed) << std::setw(7) << setprecision(3) << v[i] << " ";
+    std::cout << std::endl;
+}
+
+void WorldState::printWorldToStdout(robotics::World* w)
+{
+    std::cout << "  world" << std::endl;
+    for(int s = 0; s < w->getNumSkeletons(); s++)
+    {
+        std::cout << "    skel " << s << std::endl << "      ";
+        Eigen::VectorXd pose;
+        w->getSkeleton(s)->getPose(pose);
+        for (unsigned int d = 0; d < pose.size(); d++)
+            std::cout << std::fixed << std::setw(7) << setprecision(3) << pose[d];
+        std::cout << std::endl;
+    }
+}
+
 
 /**
  * @function getNumberOfDoFs
